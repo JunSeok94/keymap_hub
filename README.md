@@ -1,6 +1,6 @@
-fork from [kissetfall](https://github.com/kissetfall/keymap_hub)
-source: ehrgb
-hex: sofle
+fork from [kissetfall](https://github.com/kissetfall/keymap_hub)  
+source: ehrgb  
+hex: sofle  
 
 | Hex           | Full source |
 | --------------| ----------- |
