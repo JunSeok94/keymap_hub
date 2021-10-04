@@ -1,10 +1,9 @@
-#include QMK_KEYBOARD_H
+#include "progmem.h"
 
 #ifdef OLED_DRIVER_ENABLE
 #include <stdio.h>
 
 char wpm_str[4];
-#endif
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     return OLED_ROTATION_270;
