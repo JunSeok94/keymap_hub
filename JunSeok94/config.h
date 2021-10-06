@@ -4,8 +4,8 @@
 
 /* Select hand configuration */
 
-//#define MASTER_LEFT
-#define MASTER_RIGHT
+#define MASTER_LEFT
+//#define MASTER_RIGHT
 //#define EE_HANDS
 //#define USE_SERIAL_PD2
 
@@ -17,6 +17,7 @@
 #define RGB_DI_PIN D3
 
 //#define VIA_EEPROM_LAYOUT_OPTIONS_SIZE 4
+
 #ifdef RGBLIGHT_ENABLE
 #define RGBLIGHT_SPLIT
 #define RGBLED_NUM 72  // Number of LEDs
@@ -35,4 +36,7 @@
 #define RGBLIGHT_DEFAULT_MODE RGBLIGHT_MODE_RAINBOW_SWIRL
 #endif
 
-
+#ifdef OLED_ENABLE
+#define OLED_TIMEOUT 120000
+#define OLED_BRIGHTNESS 120
+#endif

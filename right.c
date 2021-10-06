@@ -1,17 +1,139 @@
-#include "progmem.h"
+#include QMK_KEYBOARD_H
+
+/*
+#ifdef OLED_ENABLE
+#    include "oled.c"
+#endif
+
+#ifdef ENCODER_ENABLE
+#    include "encoder.c"
+#endif
+*/
+
+enum custom_keycodes {
+    KC_GCLEFT = SAFE_RANGE,
+    KC_GCRGHT,
+    KC_CLEARENT
+};
+
+/* encoder */
+bool            shift_held = false;
+static uint16_t held_shift = 0;
+
+/* luna */
+bool isSneaking = false;
+bool isJumping  = false;
+bool showedJump = true;
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case KC_GCLEFT:
+            if (record->event.pressed) {
+                register_mods(mod_config(MOD_LCTL));
+                register_mods(mod_config(MOD_LGUI));
+                register_code(KC_LEFT);
+            } else {
+                unregister_mods(mod_config(MOD_LCTL));
+                unregister_mods(mod_config(MOD_LGUI));
+                unregister_code(KC_LEFT);
+            }
+            break;  
+        case KC_GCRGHT:
+            if (record->event.pressed) {
+                register_mods(mod_config(MOD_LCTL));
+                register_mods(mod_config(MOD_LGUI));
+                register_code(KC_RGHT);
+            } else {
+                unregister_mods(mod_config(MOD_LCTL));
+                unregister_mods(mod_config(MOD_LGUI));
+                unregister_code(KC_RGHT);
+            }
+            break;
+        case KC_CLEARENT:
+            if (record->event.pressed) {
+                register_code(KC_C);
+                register_code(KC_L);
+                register_code(KC_E);
+                register_code(KC_A);
+                register_code(KC_R);
+                register_code(KC_ENT);
+            } else {
+                unregister_code(KC_C);
+                unregister_code(KC_L);
+                unregister_code(KC_E);
+                unregister_code(KC_A);
+                unregister_code(KC_R);
+                unregister_code(KC_ENT);
+            }
+        case KC_BTN1:
+            shift_held = record->event.pressed;
+            held_shift = keycode;
+            break;
+        case KC_LCTL:
+        case KC_RCTL:
+            if (record->event.pressed) {
+                isSneaking = true;
+            } else {
+                isSneaking = false;
+            }
+            break;
+        case KC_SPC:
+            if (record->event.pressed) {
+                isJumping  = true;
+                showedJump = false;
+            } else {
+                isJumping = false; 
+            }
+            break;
+    }
+    return true;
+}
+
+
+#ifdef ENCODER_ENABLE
+
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    if (index == 0) {
+        if (clockwise) {
+            if (shift_held) {
+                tap_code(KC_MNXT);
+            } else {
+                tap_code(KC_VOLU);
+            }
+        } else {
+            if (shift_held) {
+                tap_code(KC_MPRV);
+            } else {
+                tap_code(KC_VOLD);
+            }
+        }
+    } else if (index == 1) {
+        if (clockwise) {
+            if (shift_held) {
+                register_mods(mod_config(MOD_LCTL));
+                tap_code(KC_PGDOWN);
+            } else {
+                tap_code(KC_PGDOWN);
+            }
+        } else {
+            if (shift_held) {
+                unregister_mods(mod_config(MOD_LCTL));
+                tap_code(KC_PGUP);
+            } else {
+                tap_code(KC_PGUP);
+            }
+        }
+    }
+    return true;
+}
+
+#endif
+
+
 
 #ifdef OLED_ENABLE
 
-/* 32 * 32 logo */
-static void render_logo(void) {
-    static const char PROGMEM hell_logo[] = {0x00, 0x80, 0xc0, 0xc0, 0x60, 0x60, 0x30, 0x30, 0x18, 0x1c, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x80, 0xe0, 0x78, 0x1e, 0x06, 0x00, 0x0c, 0x1c, 0x18, 0x30, 0x30, 0x60, 0x60, 0xc0, 0xc0, 0x80, 0x00, 0x01, 0x03, 0x07, 0x06, 0x0c, 0x0c, 0x18, 0x18, 0x30, 0x70, 0x60, 0x00, 0xc0, 0xf0, 0x3c, 0x0f, 0x03, 0x00, 0x00, 0x00, 0x00, 0x60, 0x70, 0x30, 0x18, 0x18, 0x0c, 0x0c, 0x06, 0x07, 0x03, 0x01, 0x00, 0xf8, 0xf8, 0x80, 0x80, 0x80, 0xf8, 0xf8, 0x00, 0x80, 0xc0, 0xc0, 0x40, 0xc0, 0xc0, 0x80, 0x00, 0xf8, 0xf8, 0x00, 0xf8, 0xf8, 0x00, 0x08, 0x38, 0x08, 0x00, 0x38, 0x08, 0x30, 0x08, 0x38, 0x00, 0x1f, 0x1f, 0x01, 0x01, 0x01, 0x1f, 0x1f, 0x00, 0x0f, 0x1f, 0x1a, 0x12, 0x1a, 0x1b, 0x0b, 0x00, 0x1f, 0x1f, 0x00, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-    oled_write_raw_P(hell_logo, sizeof(hell_logo));
-}
-
-/* 32 * 14 os logos */
-static const char PROGMEM windows_logo[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbc, 0xbc, 0xbe, 0xbe, 0x00, 0xbe, 0xbe, 0xbf, 0xbf, 0xbf, 0xbf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x07, 0x0f, 0x0f, 0x00, 0x0f, 0x0f, 0x1f, 0x1f, 0x1f, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-/* KEYBOARD PET START */
+/* LUNA PET START */
 
 /* settings */
 #    define MIN_WALK_SPEED      10
@@ -31,10 +153,6 @@ uint8_t current_frame = 0;
 /* status variables */
 int   current_wpm = 0;
 led_t led_usb_state;
-
-bool isSneaking = false;
-bool isJumping  = false;
-bool showedJump = true;
 
 /* logic */
 static void render_luna(int LUNA_X, int LUNA_Y) {
@@ -146,44 +264,36 @@ static void render_luna(int LUNA_X, int LUNA_Y) {
     }
 }
 
-/* KEYBOARD PET END */
-
-static void print_logo_narrow(void) {
-    render_logo();
-
-    /* wpm counter */
-    uint8_t n = get_current_wpm();
-    char    wpm_str[4];
-    oled_set_cursor(0, 14);
-    wpm_str[3] = '\0';
-    wpm_str[2] = '0' + n % 10;
-    wpm_str[1] = '0' + (n /= 10) % 10;
-    wpm_str[0] = '0' + n / 10;
-    oled_write(wpm_str, false);
-
-    oled_set_cursor(0, 15);
-    oled_write(" wpm", false);
-}
-
-static void print_luna(void) {
-    render_luna(0, 13);
-}
+/* LUNA PET END */
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) { return OLED_ROTATION_270; }
 
 void oled_task_user(void) {
     /* KEYBOARD PET VARIABLES START */
-
-    current_wpm   = get_current_wpm();
+    current_wpm = get_current_wpm();
     led_usb_state = host_keyboard_led_state();
-
     /* KEYBOARD PET VARIABLES END */
 
+    /*
     if (is_keyboard_master()) {
-        print_logo_narrow();
+        render_luna(0, 13);
     } else {
-        print_luna();
+        oled_set_cursor(0, 14);
+        print_wpm();
     }
+    */
+
+    render_luna(0, 13);
 }
 
 #endif
+
+
+
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
+	[0] = LAYOUT(KC_GESC, KC_Q, KC_W, KC_E, KC_R, KC_T, KC_Y, KC_U, KC_I, KC_O, KC_P, KC_BSLS, LCTL_T(KC_F2), KC_A, KC_S, KC_D, KC_F, KC_G, KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_QUOT, LALT_T(KC_F9), KC_Z, KC_X, KC_C, KC_V, KC_B, KC_N, KC_M, KC_COMM, KC_DOT, KC_SLSH, KC_NO, LSFT_T(KC_HANJ), KC_PSCR, LCTL_T(KC_WSCH), LALT_T(KC_DEL), RSFT_T(KC_ENT), LT(4,KC_HAEN), KC_MPLY, RGUI(KC_L), KC_CAPS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGUI_T(KC_NO), RALT_T(KC_TAB), RCTL_T(KC_SPC), LT(3,KC_BSPC), KC_BTN1, KC_BTN2, KC_NO, KC_NO, KC_NO, KC_NO),
+	[1] = LAYOUT(KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_Q, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TAB, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, TO(0), KC_TRNS, KC_BTN1, KC_BTN2, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_SPC, KC_BSPC, KC_ENT),
+	[2] = LAYOUT(KC_LBRC, KC_6, KC_7, KC_8, KC_9, KC_0, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, LALT_T(KC_RBRC), KC_Y, KC_U, KC_I, KC_O, KC_P, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, LCTL(KC_BSLS), KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, TO(0), KC_N, KC_M, KC_COMM, KC_DOT, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, LALT_T(KC_ENT), KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO),
+	[3] = LAYOUT(KC_F3, KC_F4, KC_GCLEFT, KC_UP, KC_GCRGHT, KC_HOME, KC_BTN2, KC_WH_U, KC_MS_U, KC_WH_L, KC_NO, KC_NO, KC_F5, LSFT_T(KC_F6), KC_LEFT, KC_DOWN, KC_RGHT, KC_END, KC_BTN1, KC_MS_L, KC_MS_D, KC_MS_R, KC_NO, KC_NO, KC_F7, KC_COMM, KC_DOT, KC_LBRC, RSFT_T(KC_RBRC), KC_PGUP, KC_BTN3, KC_WH_D, KC_F1, KC_WH_R, KC_NO, KC_NO, KC_F8, KC_S, KC_N, LALT(KC_F4), KC_CLEARENT, KC_PGDN, TO(2), TO(1), KC_BTN4, KC_BTN5, KC_NO, KC_NO, KC_NO, KC_NO, KC_F10, KC_F11, LCTL_T(KC_F12), KC_TRNS, KC_BTN2, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO),
+	[4] = LAYOUT(KC_GRV, KC_BSLS, KC_7, KC_8, KC_9, KC_0, KC_NO, KC_NO, KC_UP, KC_NO, KC_NO, KC_NO, KC_SCLN, KC_QUOT, KC_4, KC_5, KC_6, KC_EQL, KC_NO, KC_LEFT, KC_DOWN, KC_RGHT, KC_NO, KC_NO, RGB_VAI, KC_SLSH, KC_1, KC_2, KC_3, KC_MINS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGB_VAD, RGB_RMOD, RGB_MOD, KC_WBAK, KC_WFWD, KC_TRNS, RGB_TOG, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, KC_NO, RGB_SPD, RGB_SPI, LCTL_T(KC_MPRV), LSFT_T(KC_MNXT), KC_BTN3, KC_TRNS, KC_NO, KC_NO, KC_NO, KC_NO)
+};
